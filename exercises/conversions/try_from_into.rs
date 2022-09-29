@@ -23,7 +23,7 @@ enum IntoColorError {
     IntConversion,
 }
 
-// I AM NOT DONE
+// I AM DONE
 
 // Your task is to complete this implementation
 // and return an Ok result of inner type Color.
@@ -38,6 +38,7 @@ enum IntoColorError {
 impl TryFrom<(i16, i16, i16)> for Color {
     type Error = IntoColorError;
     fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {
+        Color::try_from([tuple.0, tuple.1, tuple.2])
     }
 }
 
@@ -45,6 +46,26 @@ impl TryFrom<(i16, i16, i16)> for Color {
 impl TryFrom<[i16; 3]> for Color {
     type Error = IntoColorError;
     fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {
+        let arr: Result<Vec<u8>, Self::Error> = arr
+            .into_iter()
+            .map(|byte| {
+                if !(0..=255).contains(byte) {
+                    return Err(Self::Error::IntConversion);
+                } else {
+                    Ok(*byte as u8)
+                }
+            })
+            .collect();
+
+        match arr {
+            Ok(v) => {
+                let [red, green, blue]: [u8; 3] = v
+                    .try_into()
+                    .expect("Vec<u8> created from [u8, 3] iter should be interchangable");
+                Ok(Color { red, green, blue })
+            }
+            Err(err) => Err(err),
+        }
     }
 }
 
@@ -52,6 +73,12 @@ impl TryFrom<[i16; 3]> for Color {
 impl TryFrom<&[i16]> for Color {
     type Error = IntoColorError;
     fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {
+        let arr: Result<[i16; 3], _> = slice.try_into();
+        if let Ok(arr) = arr {
+            Color::try_from(arr)
+        } else {
+            Err(Self::Error::BadLen)
+        }
     }
 }
 
